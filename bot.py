@@ -55,13 +55,14 @@ bot_self = BotzHub.loop.run_until_complete(BotzHub.get_me())
 
 # join check
 async def get_user_join(id):
-    ok = True
-    try:
-        await BotzHub(GetParticipantRequest(channel=channel, participant=id))
-        ok = True
-    except UserNotParticipantError:
-        ok = False
-    return ok
+  try:
+    await BotzHub(GetParticipantRequest(channel=channel, participant=id))
+    return True
+  except UserNotParticipantError:
+    return False
+  except Exception as e:
+    log.error(e)
+    return None  # Indicate error for logging purposes
 
 
 @BotzHub.on(events.ChatAction)
@@ -119,24 +120,41 @@ async def _(event):
 
 
 @BotzHub.on(events.NewMessage(incoming=True))
+@BotzHub.on(events.NewMessage(incoming=True))
 async def mute_on_msg(event):
-    if event.is_private:
-        return
-    if on_new_msg is False:
-        return
-    x = await get_user_join(event.sender_id)
+  if event.is_private:
+    return
+  if on_new_msg is False:
+    return
+
+  # Check user join status
+  x = await get_user_join(event.sender_id)
+
+  # Get current user permissions 
+  try:
+      current_permissions = await BotzHub(GetPermissionsRequest(event.chat_id, event.sender_id))
+  except Exception as e:
+      log.error(f"Error getting permissions for user {event.sender_id}: {e}")
+      return
+
+  # Only mute if user not joined and can currently send messages
+  if x is False and current_permissions.send_messages:
     temp = await BotzHub.get_entity(event.sender_id)
-    if x is False:
-        if temp.bot:
-            return
-        nm = temp.first_name
-        try:
-            await BotzHub.edit_permissions(
-                event.chat.id, event.sender_id, until_date=None, send_messages=False
-            )
-        except Exception as e:
-            log.error(e)
-            return
+    if temp.bot:
+      return
+
+    nm = temp.first_name
+    try:
+      # Mute user only if they can currently send messages
+      await BotzHub.edit_permissions(
+          event.chat.id, event.sender_id, until_date=None, send_messages=False
+      )
+    except Exception as e:
+      log.error(e)
+      return
+
+    # ... rest of the code to send welcome message and buttons ...
+
         user = await event.get_sender()
         chat = await event.get_chat()
         title = chat.title or "this chat"
