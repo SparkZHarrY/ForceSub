@@ -55,13 +55,13 @@ bot_self = BotzHub.loop.run_until_complete(BotzHub.get_me())
 
 # join check
 async def get_user_join(id):
-    ok = True
-    try:
-        await BotzHub(GetParticipantRequest(channel=channel, participant=id))
-        ok = True
-    try-except UserNotParticipantError:
-        ok = False
-    return ok
+  try:
+    await BotzHub(GetParticipantRequest(channel=channel, participant=id))
+    return True
+  except UserNotParticipantError:
+    # Handle the case where the user is not a participant
+    # For example, you could return False or log a message
+    return False
 
 
 @BotzHub.on(events.ChatAction)
