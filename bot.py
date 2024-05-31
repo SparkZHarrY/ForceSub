@@ -59,7 +59,7 @@ async def get_user_join(id):
     try:
         await BotzHub(GetParticipantRequest(channel=channel, participant=id))
         ok = True
-    except UserNotParticipantError:
+    try-except UserNotParticipantError:
         ok = False
     return ok
 
