@@ -54,15 +54,13 @@ bot_self = BotzHub.loop.run_until_complete(BotzHub.get_me())
 
 
 # join check
-async def get_user_join(id):
-  try:
-    await BotzHub(GetParticipantRequest(channel=channel, participant=id))
-    return True
-  except UserNotParticipantError:
-    return False
-  except Exception as e:
-    log.error(e)
-    return None  # Indicate error for logging purposes
+async def get_user_join(event.sender_id):
+    try:
+        participant = await BotzHub(GetParticipantRequest(channel=channel, participant=id))
+    except Exception as e:
+        log.error(f"Error getting participant info: {e}")
+        return False
+    return participant is not None
 
 
 @BotzHub.on(events.ChatAction)
@@ -119,7 +117,6 @@ async def _(event):
         await event.reply(msg, buttons=butt)
 
 
-@BotzHub.on(events.NewMessage(incoming=True))
 @BotzHub.on(events.NewMessage(incoming=True))
 async def mute_on_msg(event):
   if event.is_private:
